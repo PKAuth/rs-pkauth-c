@@ -1,0 +1,12 @@
+[package]
+name = "pkauth-c"
+version = "0.1.0"
+authors = ["James Parker <dev@jamesparker.me>"]
+# build = "build.rs"
+
+[lib]
+name = "pkauth_c"
+crate-type = ["staticlib"]
+
+[dependencies]
+# rusty-cheddar = "*"
