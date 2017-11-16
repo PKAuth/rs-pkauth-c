@@ -9,4 +9,6 @@ name = "pkauth_c"
 crate-type = ["staticlib"]
 
 [dependencies]
+pkauth = {path="../rs-pkauth"}
+ring = "*"
 # rusty-cheddar = "*"
