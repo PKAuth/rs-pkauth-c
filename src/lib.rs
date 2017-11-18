@@ -2,6 +2,7 @@
 extern crate pkauth;
 extern crate ring;
 
+use pkauth::{serialize_psf, deserialize_psf, EncodePSF, DecodePSF};
 use pkauth::sym::enc as se;
 use ring::rand::{SystemRandom};
 
@@ -17,8 +18,32 @@ pub extern fn rs_se_aesgcm256() -> se::Algorithm {
 
 #[no_mangle]
 pub extern fn rs_se_gen( rng : &SystemRandom, alg : &se::Algorithm) -> Option<se::Key> {
-    let k = se::gen( rng, alg);
-    k.ok()
+    se::gen( rng, alg).ok()
+}
+
+#[no_mangle]
+pub extern fn rs_se_encrypt( rng : &SystemRandom, key : &se::Key, message : &Vec<u8>) -> Option<Vec<u8>> {
+    se::encrypt_content_bs( rng, key, message.clone()).ok()
+}
+
+#[no_mangle]
+pub extern fn rs_se_decrypt( key : &se::Key, c : &Vec<u8>) -> Option<Vec<u8>> {
+    se::decrypt_content_bs( key, c).ok()
+}
+
+#[no_mangle]
+pub extern fn rs_se_encode_key( key : &se::Key) -> String {
+    serialize_psf( &EncodePSF::encode_psf( key))
+}
+
+#[no_mangle]
+pub extern fn rs_se_decode_key( alg : &se::Algorithm, encoded : String) -> Option<se::Key> {
+    if let Some( encoded) = deserialize_psf( encoded).ok() {
+        DecodePSF::decode_psf( alg, &encoded).ok()
+    }
+    else {
+       None
+    }
 }
 
 #[cfg(test)]
