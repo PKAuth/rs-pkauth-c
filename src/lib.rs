@@ -2,7 +2,7 @@
 extern crate pkauth;
 extern crate ring;
 
-use pkauth::{serialize_psf, deserialize_psf, EncodePSF, DecodePSF};
+use pkauth::{serialize_psf, deserialize_psf, EncodePSF, DecodePSF, AlgorithmId, ToAlgorithm};
 use pkauth::sym::enc as se;
 use ring::rand::{SystemRandom};
 
@@ -44,6 +44,16 @@ pub extern fn rs_se_decode_key( alg : &se::Algorithm, encoded : String) -> Optio
     else {
        None
     }
+}
+
+#[no_mangle]
+pub extern fn rs_se_derive_key( alg : &se::Algorithm, salt : &Vec<u8>, password : &Vec<u8>) -> se::Key {
+    se::derive_key( alg, salt, password)
+}
+
+#[no_mangle]
+pub extern fn rs_se_key_algorithm_identifier( key : &se::Key) -> String {
+    AlgorithmId::to_algorithm_id( &ToAlgorithm::to_algorithm( key)).to_owned()
 }
 
 #[cfg(test)]
