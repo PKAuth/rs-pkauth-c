@@ -10,5 +10,5 @@ crate-type = ["staticlib"]
 
 [dependencies]
 pkauth = {path="../rs-pkauth"}
-ring = "*"
+ring = {git = "https://github.com/briansmith/ring.git", ref = "8411c0098ac1f8b4b96d0766a5057aae5e78c42a"} # "0.12.1"
 # rusty-cheddar = "*"
