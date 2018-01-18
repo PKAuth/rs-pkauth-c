@@ -3,7 +3,8 @@
 extern crate pkauth;
 extern crate ring;
 
-use pkauth::{serialize_psf, deserialize_psf, EncodePSF, DecodePSF, AlgorithmId, ToAlgorithm};
+use pkauth::{AlgorithmId, ToAlgorithm};
+use pkauth::internal::{serialize_psf, deserialize_psf};
 use pkauth::sym::enc as se;
 use ring::rand::{SystemRandom};
 
@@ -34,17 +35,12 @@ pub extern fn rs_se_decrypt( key : &se::Key, c : &Vec<u8>) -> Option<Vec<u8>> {
 
 #[no_mangle]
 pub extern fn rs_se_encode_key( key : &se::Key) -> String {
-    serialize_psf( &EncodePSF::encode_psf( key))
+    serialize_psf( key)
 }
 
 #[no_mangle]
 pub extern fn rs_se_decode_key( alg : &se::Algorithm, encoded : String) -> Option<se::Key> {
-    if let Some( encoded) = deserialize_psf( encoded).ok() {
-        DecodePSF::decode_psf( alg, &encoded).ok()
-    }
-    else {
-       None
-    }
+    deserialize_psf( alg, &encoded).ok()
 }
 
 #[no_mangle]
