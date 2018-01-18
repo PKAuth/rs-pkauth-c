@@ -12,3 +12,4 @@ crate-type = ["staticlib"]
 cbindgen = "*"
 pkauth = {path="../rs-pkauth"}
 ring = "*"
+staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}
