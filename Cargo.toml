@@ -10,6 +10,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 pkauth = {path="../rs-pkauth"}
+publicsuffix = "*"
 ring = "*"
 staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}
 

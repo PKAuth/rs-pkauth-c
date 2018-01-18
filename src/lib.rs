@@ -1,12 +1,29 @@
 #![deny(warnings)]
 
 extern crate pkauth;
+extern crate publicsuffix;
 extern crate ring;
+extern crate staticpublicsuffix;
 
 use pkauth::{AlgorithmId, ToAlgorithm};
 use pkauth::internal::{serialize_psf, deserialize_psf};
 use pkauth::sym::enc as se;
+use publicsuffix::Host;
 use ring::rand::{SystemRandom};
+use staticpublicsuffix::STATIC_SUFFIX_LIST;
+
+#[no_mangle]
+pub extern fn rs_extract_domain( url : String) -> Option<String> {
+    let d = &STATIC_SUFFIX_LIST.parse_url( url).ok()?;
+    match d {
+        &Host::Ip(_) => {
+            None
+        }
+        &Host::Domain( ref d) => {
+            d.root().map(|d| d.to_string())
+        }
+    }
+}
 
 #[no_mangle]
 pub extern fn rs_systemrandom() -> SystemRandom {
