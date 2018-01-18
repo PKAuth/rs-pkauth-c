@@ -9,7 +9,9 @@ name = "pkauth_c"
 crate-type = ["staticlib"]
 
 [dependencies]
-cbindgen = "*"
 pkauth = {path="../rs-pkauth"}
 ring = "*"
 staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}
+
+[build-dependencies]
+cbindgen = "*"
