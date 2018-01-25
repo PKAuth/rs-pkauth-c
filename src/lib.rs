@@ -11,33 +11,70 @@ use pkauth::sym::enc as se;
 use publicsuffix::Host;
 use ring::rand::{SystemRandom};
 use staticpublicsuffix::STATIC_SUFFIX_LIST;
+// use std::any::Any;
+use std::ptr::null_mut;
 
-#[no_mangle]
-pub extern fn rs_extract_domain( url : String) -> Option<String> {
-    let d = &STATIC_SUFFIX_LIST.parse_url( url).ok()?;
-    match d {
-        &Host::Ip(_) => {
-            None
+fn to_c<T>( o : T) -> *mut T {
+    Box::into_raw( Box::new( o))
+}
+
+// #[no_mangle]
+// pub unsafe extern fn free_c( o : *mut Any) {
+// pub unsafe extern fn free_c<T>( o : *mut T) {
+#[inline]
+unsafe fn free_c<T>( o : *mut T) {
+    Box::from_raw( o);
+}
+
+fn option_to_ptr<T>( o : Option<T>) -> *mut T {
+    match o {
+        None => {
+            null_mut()
         }
-        &Host::Domain( ref d) => {
-            d.root().map(|d| d.to_string())
+        Some( o) => {
+            to_c( o)
         }
     }
 }
 
 #[no_mangle]
-// pub extern fn rs_free<T>( o : T) {
-pub extern fn rs_free_system_random( _ : SystemRandom) {
+pub unsafe extern fn rs_free_systemrandom( o : *mut SystemRandom) {
+    free_c( o)
 }
 
 #[no_mangle]
-pub extern fn rs_systemrandom() -> SystemRandom {
-    SystemRandom::new()
+pub unsafe extern fn rs_free_se_algorithm( o : *mut se::Algorithm) {
+    free_c( o)
 }
 
 #[no_mangle]
-pub extern fn rs_se_aesgcm256() -> se::Algorithm {
-    se::Algorithm::SEAesGcm256
+pub unsafe extern fn rs_free_se_key( o : *mut se::Key) {
+    free_c( o)
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_extract_domain( url : String) -> *mut String { // Option<String> {
+    let d = &STATIC_SUFFIX_LIST.parse_url( url).ok();
+    let d = d.and_then(|d| match d {
+        Host::Ip(_) => {
+            None
+        }
+        Host::Domain( ref d) => {
+            d.root().map(|d| d.to_string())
+        }
+    });
+    option_to_ptr( d)
+}
+
+#[no_mangle]
+pub extern fn rs_systemrandom() -> *mut SystemRandom {
+    to_c( SystemRandom::new())
+}
+
+#[no_mangle]
+pub extern fn rs_se_aesgcm256() -> *mut se::Algorithm {
+    to_c( se::Algorithm::SEAesGcm256)
 }
 
 #[no_mangle]
