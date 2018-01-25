@@ -26,6 +26,11 @@ pub extern fn rs_extract_domain( url : String) -> Option<String> {
 }
 
 #[no_mangle]
+// pub extern fn rs_free<T>( o : T) {
+pub extern fn rs_free_system_random( _ : SystemRandom) {
+}
+
+#[no_mangle]
 pub extern fn rs_systemrandom() -> SystemRandom {
     SystemRandom::new()
 }
