@@ -12,6 +12,8 @@ crate-type = ["staticlib"]
 pkauth = {path="../rs-pkauth"}
 publicsuffix = "*"
 ring = "*"
+serde = "*"
+serde_json = "*"
 staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}
 
 [build-dependencies]

@@ -3,17 +3,23 @@
 extern crate pkauth;
 extern crate publicsuffix;
 extern crate ring;
+extern crate serde;
+extern crate serde_json;
 extern crate staticpublicsuffix;
 
-use pkauth::{AlgorithmId, ToAlgorithm};
-use pkauth::internal::{serialize_psf, deserialize_psf};
+use pkauth::{AlgorithmId, ToAlgorithm, PKAJ};
+use pkauth::internal::{deserialize_psf};
 use pkauth::sym::enc as se;
 use publicsuffix::Host;
 use ring::rand::{SystemRandom};
 use staticpublicsuffix::STATIC_SUFFIX_LIST;
+use serde::ser::Serialize;
 // use std::any::Any;
+use std::ffi::{CString};
+use std::os::raw::c_char;
 use std::ptr::null_mut;
 
+#[inline]
 fn to_c<T>( o : T) -> *mut T {
     Box::into_raw( Box::new( o))
 }
@@ -26,6 +32,8 @@ unsafe fn free_c<T>( o : *mut T) {
     Box::from_raw( o);
 }
 
+/// Returns null if None.
+#[inline]
 fn option_to_ptr<T>( o : Option<T>) -> *mut T {
     match o {
         None => {
@@ -52,10 +60,41 @@ pub unsafe extern fn rs_free_se_key( o : *mut se::Key) {
     free_c( o)
 }
 
+/// Returns null if None.
+#[inline]
+fn to_cstring( s : String) -> *mut c_char {
+    match CString::new( s) {
+        Err(_) => {
+            null_mut()
+        }
+        Ok( s) => {
+            s.into_raw()
+        }
+    }
+}
+
+/// Returns null if None.
+#[inline]
+fn to_json_cstring<T : Serialize>( o : &T) -> *mut c_char {
+    match serde_json::to_string( o) {
+        Err(_) => {
+            null_mut()
+        }
+        Ok( s) => {
+            to_cstring( s)
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern fn rs_free_cstring( o : *mut c_char) {
+    CString::from_raw( o);
+}
+
 #[no_mangle]
 /// Returns null if None.
 pub extern fn rs_extract_domain( url : String) -> *mut String { // Option<String> {
-    let d = &STATIC_SUFFIX_LIST.parse_url( url).ok();
+    let d = (&STATIC_SUFFIX_LIST).parse_url( url).ok();
     let d = d.and_then(|d| match d {
         Host::Ip(_) => {
             None
@@ -78,8 +117,10 @@ pub extern fn rs_se_aesgcm256() -> *mut se::Algorithm {
 }
 
 #[no_mangle]
-pub extern fn rs_se_gen( rng : &SystemRandom, alg : &se::Algorithm) -> Option<se::Key> {
-    se::gen( rng, alg).ok()
+/// Returns null if None.
+pub extern fn rs_se_gen( rng : &SystemRandom, alg : &se::Algorithm) -> *mut se::Key {
+    let key = se::gen( rng, alg).ok();
+    option_to_ptr( key)
 }
 
 #[no_mangle]
@@ -93,8 +134,9 @@ pub extern fn rs_se_decrypt( key : &se::Key, c : &Vec<u8>) -> Option<Vec<u8>> {
 }
 
 #[no_mangle]
-pub extern fn rs_se_encode_key( key : &se::Key) -> String {
-    serialize_psf( key)
+/// Returns null if None.
+pub extern fn rs_se_encode_key( key : &se::Key) -> *mut c_char {
+    to_json_cstring( &PKAJ{pkaj: key})
 }
 
 #[no_mangle]
