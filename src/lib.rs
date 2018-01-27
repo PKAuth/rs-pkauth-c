@@ -8,20 +8,25 @@ extern crate serde_json;
 extern crate staticpublicsuffix;
 
 use pkauth::{AlgorithmId, ToAlgorithm, PKAJ};
-use pkauth::internal::{deserialize_psf};
 use pkauth::sym::enc as se;
 use publicsuffix::Host;
 use ring::rand::{SystemRandom};
 use staticpublicsuffix::STATIC_SUFFIX_LIST;
 use serde::ser::Serialize;
 // use std::any::Any;
-use std::ffi::{CString};
+use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 use std::ptr::null_mut;
 
 #[inline]
 fn to_c<T>( o : T) -> *mut T {
     Box::into_raw( Box::new( o))
+}
+
+fn borrow_cstr<'a>( s : *const c_char) -> Option<&'a str> {
+    unsafe {
+        CStr::from_ptr( s).to_str().ok()
+    }
 }
 
 // #[no_mangle]
@@ -140,8 +145,17 @@ pub extern fn rs_se_encode_key( key : &se::Key) -> *mut c_char {
 }
 
 #[no_mangle]
-pub extern fn rs_se_decode_key( alg : &se::Algorithm, encoded : String) -> Option<se::Key> {
-    deserialize_psf( alg, &encoded).ok()
+/// Returns null if None.
+pub extern fn rs_se_decode_key( encoded : *const c_char) -> *mut se::Key {
+    match borrow_cstr( encoded) {
+        None => {
+            null_mut()
+        }
+        Some( encoded) => {
+            let o : Option<PKAJ<se::Key>> = serde_json::from_str( encoded).ok();
+            option_to_ptr( o.map(|o| o.pkaj))
+        }
+    }
 }
 
 #[no_mangle]
