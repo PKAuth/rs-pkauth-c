@@ -19,7 +19,8 @@ use serde::ser::Serialize;
 // use std::any::Any;
 use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
-use std::ptr::null_mut;
+use std::ptr::{null_mut, write};
+use std::slice;
 
 #[inline]
 fn to_c<T>( o : T) -> *mut T {
@@ -67,6 +68,10 @@ pub unsafe extern fn rs_free_se_algorithm( o : *mut se::Algorithm) {
 pub unsafe extern fn rs_free_se_key( o : *mut se::Key) {
     free_c( o)
 }
+#[no_mangle]
+pub unsafe extern fn rs_free_vec_u8( o : *mut Vec<u8>) {
+    free_c( o)
+}
 
 /// Returns null if None.
 #[inline]
@@ -95,13 +100,28 @@ fn to_json_cstring<T : Serialize>( o : &T) -> *mut c_char {
 }
 
 #[inline]
-fn from_json_cstring<'a, T : Deserialize<'a>>( s : *const c_char) -> Option<T> {
+fn from_json_cstr<'a, T : Deserialize<'a>>( s : *const c_char) -> Option<T> {
     borrow_cstr( s).and_then(|s| serde_json::from_str(s).ok())
 }
 
 #[no_mangle]
 pub unsafe extern fn rs_free_cstring( o : *mut c_char) {
     CString::from_raw( o);
+}
+
+#[no_mangle]
+pub unsafe extern fn to_vec( arr : *const u8, len : usize) -> *mut Vec<u8> {
+    let s = slice::from_raw_parts( arr, len);
+    to_c( s.to_vec())
+}
+
+#[no_mangle]
+pub unsafe extern fn from_vec( v : &Vec<u8>, len : *mut usize) -> *const u8 {
+    // Write length of vector.
+    write( len, v.len());
+    
+    // Return reference to vector.
+    v.as_slice().as_ptr()
 }
 
 #[no_mangle]
@@ -137,13 +157,14 @@ pub extern fn rs_se_gen( rng : &SystemRandom, alg : &se::Algorithm) -> *mut se::
 }
 
 #[no_mangle]
-pub extern fn rs_se_encrypt( rng : &SystemRandom, key : &se::Key, message : &Vec<u8>) -> Option<Vec<u8>> {
-    se::encrypt_content_bs( rng, key, message.clone()).ok()
+pub extern fn rs_se_encrypt( rng : &SystemRandom, key : &se::Key, message : &Vec<u8>) -> *mut Vec<u8> {
+    option_to_ptr( se::encrypt_content_bs( rng, key, message.clone()).ok())
 }
 
 #[no_mangle]
-pub extern fn rs_se_decrypt( key : &se::Key, c : &Vec<u8>) -> Option<Vec<u8>> {
-    se::decrypt_content_bs( key, c).ok()
+/// Returns null if None.
+pub extern fn rs_se_decrypt( key : &se::Key, c : &Vec<u8>) -> *mut Vec<u8> {
+    option_to_ptr( se::decrypt_content_bs( key, c).ok())
 }
 
 #[no_mangle]
@@ -155,7 +176,7 @@ pub extern fn rs_se_encode_key( key : &se::Key) -> *mut c_char {
 #[no_mangle]
 /// Returns null if None.
 pub extern fn rs_se_decode_key( encoded : *const c_char) -> *mut se::Key {
-    let o : Option<PKAJ<se::Key>> = from_json_cstring( encoded);
+    let o : Option<PKAJ<se::Key>> = from_json_cstr( encoded);
     option_to_ptr( o.map(|o| o.pkaj))
 }
 
