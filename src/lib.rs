@@ -134,16 +134,16 @@ pub unsafe extern fn from_vec( v : &Vec<u8>, len : *mut usize) -> *const u8 {
 pub extern fn rs_extract_domain( url : *const c_char) -> *mut c_char { // Option<String> {
     let url = borrow_cstr( url);
     let d = url.and_then(|url| (&STATIC_SUFFIX_LIST).parse_url( url).ok());
-    let d = d.and_then(|d| match d {
+    let d = d.map(|d| match d {
         Host::Ip(_) => {
-            None
+            null_mut()
         }
         Host::Domain( d) => {
-            d.root()
+            option_to_cstring( d.root())
         }
     });
 
-    option_to_cstring( d)
+    d.unwrap_or( null_mut())
 }
 
 #[no_mangle]
