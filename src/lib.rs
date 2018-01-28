@@ -164,6 +164,7 @@ pub extern fn rs_se_gen( rng : &SystemRandom, alg : &se::Algorithm) -> *mut se::
 }
 
 #[no_mangle]
+/// Returns null if None.
 pub extern fn rs_se_encrypt( rng : &SystemRandom, key : &se::Key, message : &Vec<u8>) -> *mut Vec<u8> {
     option_to_ptr( se::encrypt_content_bs( rng, key, message.clone()).ok())
 }
@@ -194,7 +195,9 @@ pub extern fn rs_se_derive_key( alg : &se::Algorithm, salt : &Vec<u8>, password 
 
 #[no_mangle]
 pub extern fn rs_se_key_algorithm_identifier( key : &se::Key) -> *mut c_char {
-    to_cstring( AlgorithmId::to_algorithm_id( &ToAlgorithm::to_algorithm( key)).to_owned())
+    let s = to_cstring( AlgorithmId::to_algorithm_id( &ToAlgorithm::to_algorithm( key)).to_owned());
+    assert!( !s.is_null());
+    s
 }
 
 #[cfg(test)]
