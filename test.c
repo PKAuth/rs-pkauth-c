@@ -6,6 +6,19 @@ typedef void Any;
 
 #include "target/pkauth.h"
 
+void zeroString( char* s) {
+	while ( *s != 0) {
+		*s = 0;
+		s++;
+	}
+}
+
+void printKey( Key* key) {
+	char* e = rs_se_encode_key( key);
+	printf("%s\n", e);
+	rs_free_cstring( e);
+}
+
 int main() {
 	printf("running\n");
 
@@ -18,15 +31,16 @@ int main() {
 
 	Key* decoded = rs_se_decode_key( encoded);
 
-	char* e = rs_se_encode_key( decoded);
-	printf("%s\n", e);
-	rs_free_cstring( e);
+	printKey( decoded);
+	zeroString( encoded);
+	printKey( decoded);
+	rs_free_cstring( encoded);
+	printKey( decoded);
 
 	rs_free_systemrandom( r);
 	rs_free_se_algorithm( alg);
 	rs_free_se_key( key);
 	rs_free_se_key( decoded);
-	rs_free_cstring( encoded);
 
 	printf("ran\n");
 

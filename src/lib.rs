@@ -7,11 +7,14 @@ extern crate serde;
 extern crate serde_json;
 extern crate staticpublicsuffix;
 
+// mod stable_ptr;
+
 use pkauth::{AlgorithmId, ToAlgorithm, PKAJ};
 use pkauth::sym::enc as se;
 use publicsuffix::Host;
 use ring::rand::{SystemRandom};
 use staticpublicsuffix::STATIC_SUFFIX_LIST;
+use serde::de::Deserialize;
 use serde::ser::Serialize;
 // use std::any::Any;
 use std::ffi::{CString, CStr};
@@ -23,18 +26,18 @@ fn to_c<T>( o : T) -> *mut T {
     Box::into_raw( Box::new( o))
 }
 
-fn borrow_cstr<'a>( s : *const c_char) -> Option<&'a str> {
-    unsafe {
-        CStr::from_ptr( s).to_str().ok()
-    }
-}
-
 // #[no_mangle]
 // pub unsafe extern fn free_c( o : *mut Any) {
 // pub unsafe extern fn free_c<T>( o : *mut T) {
 #[inline]
 unsafe fn free_c<T>( o : *mut T) {
     Box::from_raw( o);
+}
+
+fn borrow_cstr<'a>( s : *const c_char) -> Option<&'a str> {
+    unsafe {
+        CStr::from_ptr( s).to_str().ok()
+    }
 }
 
 /// Returns null if None.
@@ -89,6 +92,11 @@ fn to_json_cstring<T : Serialize>( o : &T) -> *mut c_char {
             to_cstring( s)
         }
     }
+}
+
+#[inline]
+fn from_json_cstring<'a, T : Deserialize<'a>>( s : *const c_char) -> Option<T> {
+    borrow_cstr( s).and_then(|s| serde_json::from_str(s).ok())
 }
 
 #[no_mangle]
@@ -147,25 +155,18 @@ pub extern fn rs_se_encode_key( key : &se::Key) -> *mut c_char {
 #[no_mangle]
 /// Returns null if None.
 pub extern fn rs_se_decode_key( encoded : *const c_char) -> *mut se::Key {
-    match borrow_cstr( encoded) {
-        None => {
-            null_mut()
-        }
-        Some( encoded) => {
-            let o : Option<PKAJ<se::Key>> = serde_json::from_str( encoded).ok();
-            option_to_ptr( o.map(|o| o.pkaj))
-        }
-    }
+    let o : Option<PKAJ<se::Key>> = from_json_cstring( encoded);
+    option_to_ptr( o.map(|o| o.pkaj))
 }
 
 #[no_mangle]
-pub extern fn rs_se_derive_key( alg : &se::Algorithm, salt : &Vec<u8>, password : &Vec<u8>) -> se::Key {
-    se::derive_key( alg, salt, password)
+pub extern fn rs_se_derive_key( alg : &se::Algorithm, salt : &Vec<u8>, password : &Vec<u8>) -> *mut se::Key {
+    to_c( se::derive_key( alg, salt, password))
 }
 
 #[no_mangle]
-pub extern fn rs_se_key_algorithm_identifier( key : &se::Key) -> String {
-    AlgorithmId::to_algorithm_id( &ToAlgorithm::to_algorithm( key)).to_owned()
+pub extern fn rs_se_key_algorithm_identifier( key : &se::Key) -> *mut c_char {
+    to_cstring( AlgorithmId::to_algorithm_id( &ToAlgorithm::to_algorithm( key)).to_owned())
 }
 
 #[cfg(test)]
