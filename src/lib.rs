@@ -75,7 +75,7 @@ pub unsafe extern fn rs_free_vec_u8( o : *mut Vec<u8>) {
 
 /// Returns null if None.
 #[inline]
-fn to_cstring( s : String) -> *mut c_char {
+fn to_cstring<T : Into<Vec<u8>>>( s : T) -> *mut c_char {
     match CString::new( s) {
         Err(_) => {
             null_mut()
@@ -86,27 +86,32 @@ fn to_cstring( s : String) -> *mut c_char {
     }
 }
 
-/// Returns null if None.
+#[no_mangle]
+pub unsafe extern fn rs_free_cstring( o : *mut c_char) {
+    CString::from_raw( o);
+}
+
 #[inline]
-fn to_json_cstring<T : Serialize>( o : &T) -> *mut c_char {
-    match serde_json::to_string( o) {
-        Err(_) => {
+fn option_to_cstring<T : Into<Vec<u8>>>( s : Option<T>) -> *mut c_char {
+    match s {
+        None => {
             null_mut()
         }
-        Ok( s) => {
+        Some( s) => {
             to_cstring( s)
         }
     }
 }
 
+/// Returns null if None.
+#[inline]
+fn to_json_cstring<T : Serialize>( o : &T) -> *mut c_char {
+    option_to_cstring( serde_json::to_string( o).ok())
+}
+
 #[inline]
 fn from_json_cstr<'a, T : Deserialize<'a>>( s : *const c_char) -> Option<T> {
     borrow_cstr( s).and_then(|s| serde_json::from_str(s).ok())
-}
-
-#[no_mangle]
-pub unsafe extern fn rs_free_cstring( o : *mut c_char) {
-    CString::from_raw( o);
 }
 
 #[no_mangle]
@@ -126,17 +131,19 @@ pub unsafe extern fn from_vec( v : &Vec<u8>, len : *mut usize) -> *const u8 {
 
 #[no_mangle]
 /// Returns null if None.
-pub extern fn rs_extract_domain( url : String) -> *mut String { // Option<String> {
-    let d = (&STATIC_SUFFIX_LIST).parse_url( url).ok();
+pub extern fn rs_extract_domain( url : *const c_char) -> *mut c_char { // Option<String> {
+    let url = borrow_cstr( url);
+    let d = url.and_then(|url| (&STATIC_SUFFIX_LIST).parse_url( url).ok());
     let d = d.and_then(|d| match d {
         Host::Ip(_) => {
             None
         }
-        Host::Domain( ref d) => {
-            d.root().map(|d| d.to_string())
+        Host::Domain( d) => {
+            d.root()
         }
     });
-    option_to_ptr( d)
+
+    option_to_cstring( d)
 }
 
 #[no_mangle]
