@@ -9,8 +9,9 @@ extern crate staticpublicsuffix;
 
 // mod stable_ptr;
 
-use pkauth::{AlgorithmId, ToAlgorithm, PKAJ};
+use pkauth::{AlgorithmId, ToAlgorithm, PKAJ, ToIdentifier, ToPublicKey};
 use pkauth::sym::enc as se;
+use pkauth::asym::auth as aa;
 use publicsuffix::Host;
 use ring::rand::{SystemRandom};
 use staticpublicsuffix::STATIC_SUFFIX_LIST;
@@ -68,6 +69,12 @@ pub unsafe extern fn rs_free_se_algorithm( o : *mut se::Algorithm) {
 pub unsafe extern fn rs_free_se_key( o : *mut se::Key) {
     free_c( o)
 }
+
+#[no_mangle]
+pub unsafe extern fn rs_free_aa_algorithm( o : *mut aa::Algorithm) {
+    free_c( o)
+}
+
 #[no_mangle]
 pub unsafe extern fn rs_free_vec_u8( o : *mut Vec<u8>) {
     free_c( o)
@@ -151,6 +158,8 @@ pub extern fn rs_systemrandom() -> *mut SystemRandom {
     to_c( SystemRandom::new())
 }
 
+// Sym enc functions.
+
 #[no_mangle]
 pub extern fn rs_se_aesgcm256() -> *mut se::Algorithm {
     to_c( se::Algorithm::SEAesGcm256)
@@ -200,10 +209,74 @@ pub extern fn rs_se_key_algorithm_identifier( key : &se::Key) -> *mut c_char {
     s
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+// Asym auth functions.
+#[no_mangle]
+pub extern fn rs_aa_ed25519() -> *mut aa::Algorithm {
+    to_c( aa::Algorithm::AAEd25519)
 }
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_gen( rng : &SystemRandom, alg : &aa::Algorithm) -> *mut aa::PrivateKey {
+    option_to_ptr( aa::gen( rng, alg).ok())
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_encode_private_key( key : &aa::PrivateKey) -> *mut c_char {
+    to_json_cstring( &PKAJ{pkaj: key})
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_decode_private_key( encoded : *const c_char) -> *mut aa::PrivateKey {
+    let o : Option<PKAJ<aa::PrivateKey>> = from_json_cstr( encoded);
+    option_to_ptr( o.map(|o| o.pkaj))
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_encode_public_key( key : &aa::PublicKey) -> *mut c_char {
+    to_json_cstring( &PKAJ{pkaj: key})
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_decode_public_key( encoded : *const c_char) -> *mut aa::PublicKey {
+    let o : Option<PKAJ<aa::PublicKey>> = from_json_cstr( encoded);
+    option_to_ptr( o.map(|o| o.pkaj))
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_sign( key : &aa::PrivateKey, content : &Vec<u8>) -> *mut Vec<u8> {
+    // Copy content before signing to be safe.
+    option_to_ptr( aa::sign_content_bs( key, content.to_owned()).ok())
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_aa_verify( key : &aa::PublicKey, signed : &Vec<u8>) -> *mut Vec<u8> {
+    // Copy content before verifying to be safe.
+    option_to_ptr( aa::verify_content_bs( key, signed.to_owned()).ok())
+}
+
+#[no_mangle]
+pub extern fn rs_aa_public_key_to_identifier( key : &aa::PublicKey) -> *mut c_char {
+    let s = to_cstring( ToIdentifier::to_identifier( key));
+    assert!( !s.is_null());
+    s
+}
+
+#[no_mangle]
+pub extern fn rs_aa_private_key_to_identifier( key : &aa::PrivateKey) -> *mut c_char {
+    let s = to_cstring( ToIdentifier::to_identifier( key));
+    assert!( !s.is_null());
+    s
+}
+
+#[no_mangle]
+pub extern fn rs_aa_private_key_to_public_key( key : &aa::PrivateKey) -> *mut aa::PublicKey {
+    to_c( ToPublicKey::to_public_key( key))
+}
+
