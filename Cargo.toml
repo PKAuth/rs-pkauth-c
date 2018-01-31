@@ -10,12 +10,13 @@ crate-type = ["staticlib"]
 
 [dependencies]
 pkauth = {path="../rs-pkauth"}
-ring = {git = "https://github.com/briansmith/ring.git", ref = "8411c0098ac1f8b4b96d0766a5057aae5e78c42a"} # "0.12.1"
+ring = "0.13.0-alpha" # {git = "https://github.com/briansmith/ring.git", ref = "8411c0098ac1f8b4b96d0766a5057aae5e78c42a"} # "0.12.1"
 # ring = "*"
 publicsuffix = "*"
 serde = "*"
 serde_json = "*"
 staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}
+# untrusted="0.6.0"
 
 [build-dependencies]
 cbindgen = "*"
