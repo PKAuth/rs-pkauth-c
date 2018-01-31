@@ -12,7 +12,7 @@ fn main() {
       // .with_std_types( true)
       .generate()
       .expect("Unable to generate bindings")
-      .write_to_file("target/pkauth.h");
+      .write_to_file("target/pkauth_c.h");
 
 
 //     cheddar::Cheddar::new().expect("could not read manifest")
