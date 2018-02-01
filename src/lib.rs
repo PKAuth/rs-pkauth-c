@@ -76,6 +76,16 @@ pub unsafe extern fn rs_free_aa_algorithm( o : *mut aa::Algorithm) {
 }
 
 #[no_mangle]
+pub unsafe extern fn rs_free_aa_private_key( o : *mut aa::PrivateKey) {
+    free_c( o)
+}
+
+#[no_mangle]
+pub unsafe extern fn rs_free_aa_public_key( o : *mut aa::PublicKey) {
+    free_c( o)
+}
+
+#[no_mangle]
 pub unsafe extern fn rs_free_vec_u8( o : *mut Vec<u8>) {
     free_c( o)
 }
@@ -256,9 +266,9 @@ pub extern fn rs_aa_sign( key : &aa::PrivateKey, content : &Vec<u8>) -> *mut Vec
 
 #[no_mangle]
 /// Returns null if None.
-pub extern fn rs_aa_verify( key : &aa::PublicKey, signed : &Vec<u8>) -> *mut Vec<u8> {
+pub extern fn rs_aa_verify( key : &aa::PublicKey, sig : &Vec<u8>) -> *mut Vec<u8> {
     // Copy content before verifying to be safe.
-    option_to_ptr( aa::verify_content_bs( key, signed.to_owned()).ok())
+    option_to_ptr( aa::verify_content_bs( key, sig.to_owned()).ok())
 }
 
 #[no_mangle]
@@ -278,5 +288,10 @@ pub extern fn rs_aa_private_key_to_identifier( key : &aa::PrivateKey) -> *mut c_
 #[no_mangle]
 pub extern fn rs_aa_private_key_to_public_key( key : &aa::PrivateKey) -> *mut aa::PublicKey {
     to_c( ToPublicKey::to_public_key( key))
+}
+
+#[no_mangle]
+pub extern fn rs_aa_public_key_equal( k1 : &aa::PublicKey, k2 : &aa::PublicKey) -> bool {
+    k1 == k2
 }
 
