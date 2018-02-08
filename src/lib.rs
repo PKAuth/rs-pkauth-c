@@ -144,13 +144,13 @@ fn from_json_cstr<'a, T : Deserialize<'a>>( s : *const c_char) -> Option<T> {
 }
 
 #[no_mangle]
-pub unsafe extern fn to_vec( arr : *const u8, len : usize) -> *mut Vec<u8> {
+pub unsafe extern fn rs_to_vec( arr : *const u8, len : usize) -> *mut Vec<u8> {
     let s = slice::from_raw_parts( arr, len);
     to_c( s.to_vec())
 }
 
 #[no_mangle]
-pub unsafe extern fn from_vec( v : &Vec<u8>, len : *mut usize) -> *const u8 {
+pub unsafe extern fn rs_from_vec( v : &Vec<u8>, len : *mut usize) -> *const u8 {
     // Write length of vector.
     write( len, v.len());
     
