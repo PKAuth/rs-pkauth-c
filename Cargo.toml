@@ -9,6 +9,7 @@ name = "pkauth_c"
 crate-type = ["staticlib"]
 
 [dependencies]
+base64 = "*"
 pkauth = {path="../rs-pkauth"}
 ring = "0.13.0-alpha" # {git = "https://github.com/briansmith/ring.git", ref = "8411c0098ac1f8b4b96d0766a5057aae5e78c42a"} # "0.12.1"
 # ring = "*"

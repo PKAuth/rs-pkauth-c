@@ -1,5 +1,6 @@
 #![deny(warnings)]
 
+extern crate base64;
 extern crate pkauth;
 extern crate publicsuffix;
 extern crate ring;
@@ -161,6 +162,19 @@ pub extern fn rs_extract_domain( url : *const c_char) -> *mut c_char { // Option
     });
 
     d.unwrap_or( null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern fn rs_encode_base64url( v : &Vec<u8>) -> *mut c_char {
+    let b = base64::encode_config( &v, base64::URL_SAFE);
+    to_cstring( b)
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub unsafe extern fn rs_decode_base64url( b : *const c_char) -> *mut Vec<u8> {
+    let v = borrow_cstr( b).and_then(|b| base64::decode_config( &b, base64::URL_SAFE).ok());
+    option_to_ptr( v)
 }
 
 #[no_mangle]
