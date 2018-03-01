@@ -9,6 +9,7 @@ name = "pkauth_c"
 crate-type = ["staticlib"]
 
 [dependencies]
+base64 = "*"
 pkauth = {path="../rs-pkauth"}
 publicsuffix = "*"
 ring = "*"
