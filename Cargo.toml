@@ -12,7 +12,8 @@ crate-type = ["staticlib"]
 base64 = "*"
 pkauth = {path="../rs-pkauth"}
 publicsuffix = "*"
-ring = "*"
+# ring = "*"
+ring={git = "https://github.com/jprider63/ring.git"}
 serde = "*"
 serde_json = "*"
 staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}

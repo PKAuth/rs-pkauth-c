@@ -13,6 +13,7 @@ extern crate staticpublicsuffix;
 use pkauth::{AlgorithmId, ToAlgorithm, PKAJ, ToIdentifier, ToPublicKey};
 use pkauth::sym::enc as se;
 use pkauth::asym::auth as aa;
+use pkauth::asym::enc as ae;
 use publicsuffix::Host;
 use ring::rand::{SystemRandom};
 use staticpublicsuffix::STATIC_SUFFIX_LIST;
@@ -83,6 +84,16 @@ pub unsafe extern fn rs_free_aa_private_key( o : *mut aa::PrivateKey) {
 
 #[no_mangle]
 pub unsafe extern fn rs_free_aa_public_key( o : *mut aa::PublicKey) {
+    free_c( o)
+}
+
+#[no_mangle]
+pub unsafe extern fn rs_free_ae_private_key( o : *mut ae::PrivateKey) {
+    free_c( o)
+}
+
+#[no_mangle]
+pub unsafe extern fn rs_free_ae_public_key( o : *mut ae::PublicKey) {
     free_c( o)
 }
 
@@ -307,5 +318,42 @@ pub extern fn rs_aa_private_key_to_public_key( key : &aa::PrivateKey) -> *mut aa
 #[no_mangle]
 pub extern fn rs_aa_public_key_equal( k1 : &aa::PublicKey, k2 : &aa::PublicKey) -> bool {
     k1 == k2
+}
+
+// Asym enc functions.
+
+#[no_mangle]
+pub extern fn rs_ae_x25519() -> *mut ae::Algorithm {
+    to_c( ae::Algorithm::AEX25519)
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_ae_gen( rng : &SystemRandom, alg : &ae::Algorithm) -> *mut ae::PrivateKey {
+    option_to_ptr( ae::gen( rng, alg))
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_ae_encode_public_key( key : &ae::PublicKey) -> *mut c_char {
+    to_json_cstring( &PKAJ{pkaj: key})
+}
+
+/// Returns null if None.
+pub extern fn rs_ae_decode_public_key( encoded : *const c_char) -> *mut ae::PublicKey {
+    let o : Option<PKAJ<ae::PublicKey>> = from_json_cstr( encoded);
+    option_to_ptr( o.map(|o| o.pkaj))
+}
+
+#[no_mangle]
+/// Returns null if None.
+pub extern fn rs_ae_encode_private_key( key : &ae::PrivateKey) -> *mut c_char {
+    to_json_cstring( &PKAJ{pkaj: key})
+}
+
+/// Returns null if None.
+pub extern fn rs_ae_decode_private_key( encoded : *const c_char) -> *mut ae::PrivateKey {
+    let o : Option<PKAJ<ae::PrivateKey>> = from_json_cstr( encoded);
+    option_to_ptr( o.map(|o| o.pkaj))
 }
 
