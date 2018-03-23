@@ -73,6 +73,11 @@ pub unsafe extern fn rs_free_se_key( o : *mut se::Key) {
 }
 
 #[no_mangle]
+pub unsafe extern fn rs_free_ae_algorithm( o : *mut ae::Algorithm) {
+    free_c( o)
+}
+
+#[no_mangle]
 pub unsafe extern fn rs_free_aa_algorithm( o : *mut aa::Algorithm) {
     free_c( o)
 }
@@ -323,6 +328,11 @@ pub extern fn rs_aa_public_key_equal( k1 : &aa::PublicKey, k2 : &aa::PublicKey) 
 // Asym enc functions.
 
 #[no_mangle]
+pub extern fn rs_ae_private_key_to_public_key( key : &ae::PrivateKey) -> *mut ae::PublicKey {
+    to_c( ToPublicKey::to_public_key( key))
+}
+
+#[no_mangle]
 pub extern fn rs_ae_x25519() -> *mut ae::Algorithm {
     to_c( ae::Algorithm::AEX25519)
 }
@@ -339,6 +349,7 @@ pub extern fn rs_ae_encode_public_key( key : &ae::PublicKey) -> *mut c_char {
     to_json_cstring( &PKAJ{pkaj: key})
 }
 
+#[no_mangle]
 /// Returns null if None.
 pub extern fn rs_ae_decode_public_key( encoded : *const c_char) -> *mut ae::PublicKey {
     let o : Option<PKAJ<ae::PublicKey>> = from_json_cstr( encoded);
@@ -351,6 +362,7 @@ pub extern fn rs_ae_encode_private_key( key : &ae::PrivateKey) -> *mut c_char {
     to_json_cstring( &PKAJ{pkaj: key})
 }
 
+#[no_mangle]
 /// Returns null if None.
 pub extern fn rs_ae_decode_private_key( encoded : *const c_char) -> *mut ae::PrivateKey {
     let o : Option<PKAJ<ae::PrivateKey>> = from_json_cstr( encoded);
