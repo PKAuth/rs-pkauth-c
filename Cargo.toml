@@ -11,12 +11,12 @@ crate-type = ["staticlib"]
 [dependencies]
 base64 = "*"
 pkauth = {path="../rs-pkauth"}
-publicsuffix = "*"
+publicsuffix = "1.5.1"
 # ring = "*"
 ring={git = "https://github.com/jprider63/ring.git"}
 serde = "*"
 serde_json = "*"
-staticpublicsuffix = {path="../../../Projects/staticpublicsuffix/"}
+staticpublicsuffix = "*"
 
 [build-dependencies]
 cbindgen = "*"
